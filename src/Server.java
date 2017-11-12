@@ -13,8 +13,8 @@ public class Server {
                 Socket socket = servsoc.accept();
                 System.out.println(socket.getInetAddress().getHostAddress() + " connected.");
 
-                ServerThread serthread = new ServerThread(socket);
-                serthread.run();
+                ServerThread servthread = new ServerThread(socket);
+                servthread.start();
             }
         }catch (IOException e){
             System.out.println(e.getMessage());
@@ -23,34 +23,31 @@ public class Server {
 }
 
 class ServerThread extends Thread{
-    private PrintStream os;
-    private BufferedReader is;
+    private ObjectOutputStream os;
+    private ObjectInputStream is;
     private InetAddress address;
 
     public ServerThread(Socket sock) throws IOException{
-        os = new PrintStream(sock.getOutputStream());
-        InputStream input = sock.getInputStream();
-        is = new BufferedReader(new InputStreamReader(input));
+        os = new ObjectOutputStream(sock.getOutputStream());
+        is = new ObjectInputStream(sock.getInputStream());
         address = sock.getInetAddress();
     }
 
     public void run(){
-        try{
-            int i = 0;
-            String str;
-            while((str = is.readLine()) != null){
-                System.out.println(str);
+        try {
+            String str = (String) is.readObject();
 
-                Process p = Runtime.getRuntime().exec(str);
-                BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                System.out.println(br.readLine());
+            Process p = Runtime.getRuntime().exec(str);
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-               //i++;
-               //System.out.println("Get answer! i=" + Integer.toString(i) + " Hostname = " + address.getHostName());
-               os.println(i);
-            }
-        }catch (IOException e){
+            String ans = br.readLine();
+
+            os.writeObject(ans);
+            System.out.println(ans);
+
+        }catch (IOException | ClassNotFoundException e){
             System.out.println("Disconnect");
+            e.printStackTrace();
         }finally {
             disconnect();
         }

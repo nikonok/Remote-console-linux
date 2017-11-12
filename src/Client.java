@@ -3,18 +3,18 @@ import java.net.*;
 
 public class Client {
     private static int port = 49001;
+    static String answer;
 
     public static void main(String[] args){
         try {
             Socket socket = new Socket(InetAddress.getLocalHost(), port);
-            PrintStream ps = new PrintStream(socket.getOutputStream());
-            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            for(int i = 0; i < 10; i++){
-//                ps.print("PING");
-//                //System.out.println("PING + " + Integer.toString(br.read()));
-//                Thread.sleep(1000);
-//            }
-            ps.println("pwd");
+
+            ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
+            ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
+            String command = "sudo pwd";
+            os.writeObject(command);
+            answer = (String) is.readObject();
+            System.out.println(answer);
             socket.close();
         }
         catch (UnknownHostException e){
@@ -23,6 +23,9 @@ public class Client {
         }
         catch (IOException e){
             System.out.println("Exception on IO.");
+            e.printStackTrace();
+        }
+        catch (ClassNotFoundException e){
             e.printStackTrace();
         }
 //        catch (InterruptedException e){
