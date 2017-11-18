@@ -1,25 +1,51 @@
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
     private static int port = 49001;
+    private static ArrayList<ServerThread> users = new ArrayList<>();
 
     public static void main(String[] args){
         try{
             ServerSocket servsoc = new ServerSocket(port);
+            ServerStopThread serverStopThread = new ServerStopThread();
+            serverStopThread.start();
             System.out.println("Server initialized\n\n");
 
             while(true) {
-                Socket socket = servsoc.accept();
-                System.out.println(socket.getInetAddress().getHostAddress() + " connected.");
-
-                ServerThread servthread = new ServerThread(socket);
-                servthread.start();
+                Socket socket = accept(servsoc);
+                if(socket != null) {
+                    System.out.println(socket.getInetAddress().getHostAddress() + " connected.");
+                    ServerThread serverThread = new ServerThread(socket);
+                    serverThread.start();
+                    users.add(serverThread);
+                }
             }
-        }catch (IOException e){
+        }catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        finish();
+    }
+
+    private static Socket accept(ServerSocket serv){
+        try{
+            return serv.accept();
+        }catch (IOException e){}
+        return null;
+    }
+
+    private static void serverIsDown(){
+        for(ServerThread s : users){
+            s.serverIsDownMessage();
+        }
+    }
+
+    public synchronized static void finish(){
+        serverIsDown();
+        System.out.println("Server Is Down\n");
+        System.exit(0);
     }
 }
 
@@ -31,10 +57,12 @@ public class Server {
 //    22 - Not Found                #неверная команда
 //3* - Server Error
 //    30 - Internal Server Error    #внутренняя ошибка сервера(пояснения по ней будут в строке)
+//    31 - Server is down         #сообщение о выключении сервера
 
 class ServerThread extends Thread{
     private static int uniqID = 0;
     private int ID;
+    private int timeOut = 10000;
 
     private ObjectOutputStream os;
     private ObjectInputStream is;
@@ -45,12 +73,15 @@ class ServerThread extends Thread{
     private String answer21 = "21 Unauthorized";
     private String answer22 = "22 Command not found";
     private String answer30 = "30 Internal Server Error ";
+    private String answer31 = "31 Server is down";
 
     private String password = "echo \"nikonok\" | ";
     private String userPassword = "passWord";
     private String fileName = "shellfile_";
 
     ServerThread(Socket sock) throws IOException{
+        this.setDaemon(true);
+        sock.setSoTimeout(timeOut);
         os = new ObjectOutputStream(sock.getOutputStream());
         is = new ObjectInputStream(sock.getInputStream());
         address = sock.getInetAddress();
@@ -147,6 +178,15 @@ class ServerThread extends Thread{
         }
     }
 
+    public void serverIsDownMessage(){
+        try {
+            ArrayList<String> answer = new ArrayList<>();
+            answer.add(answer31);
+            os.writeObject(answer);
+            System.out.println("\n" + address.getHostName() + ":\n  " + answer30 + "\n");
+        }catch (IOException e){}
+    }
+
     public void disconnect(){
         try{
             System.out.println("Disconnect from " + address.getHostName());
@@ -182,5 +222,39 @@ class ServerThread extends Thread{
     private void deleteCommand(){
         File file = new File(fileName);
         file.delete();
+    }
+}
+
+class ServerStopThread extends Thread{
+    static final String shutdown = "shutdown";
+    private Scanner fin;
+
+    public ServerStopThread(){
+        this.setDaemon(true);
+        fin = new Scanner(System.in);
+        System.out.println("Enter '" + shutdown + "' to stop the server");
+    }
+
+    public void run(){
+        while (true){
+            try{
+                Thread.sleep(1000);
+            }catch (InterruptedException e){
+                break;
+            }
+            if(!fin.hasNextLine())
+                continue;
+            String str = fin.nextLine();
+            if(str.equals(shutdown)){
+                quit();
+                break;
+            }
+        }
+    }
+
+    private void quit(){
+        System.out.println("Server is shutting down...");
+        fin.close();
+        Server.finish();
     }
 }

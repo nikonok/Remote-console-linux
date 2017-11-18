@@ -17,7 +17,7 @@ endif
 OBJCLIENT=Client.class
 OBJSERVER=Server.class
 
-OBJ=$(OBJCLIENT) $(OBJSERVER)
+OBJ=$(OBJCLIENT) $(OBJSERVER) ServerStopThread.class ServerThread.class
 
 all: $(OBJ) run_client
 
