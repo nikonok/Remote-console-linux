@@ -37,30 +37,33 @@ public class Client {
     }
 
     public static boolean treatment(ArrayList<String> answer) {
-        for (String s: answer) {
-            String result = s.substring(0, 2);
+        String s = answer.get(0);
+        String numberAnswer = s.substring(0, 2);
 
-            /** Success */
-            if (Objects.equals(result, "10")) {
-                System.out.println(s.substring(6));
-                System.out.println("Ok");
-            }
-            /** Client Error */
-            else if (Objects.equals(result, "20"))
-                System.err.println("Bad request");
-            else if (Objects.equals(result, "21")) {
-                System.err.println("Unauthorized");
-                System.out.print("Input password: ");
-            }
-            else if (Objects.equals(result, "22"))
-                System.err.println("Not Found");
-            /** Server Error */
-            else if (Objects.equals(result, "38")) {
-                System.err.println("Internal Server Error");
-                return false;
-            }
+        /** Client Error */
+        if (Objects.equals(numberAnswer, "20")) {
+            System.err.println("Bad request");
+            return true;
         }
+        else if (Objects.equals(numberAnswer, "21")) {
+            System.err.println("Unauthorized");
+            System.out.print("Input password: ");
+            return true;
+        }
+        else if (Objects.equals(numberAnswer, "22")) {
+            System.err.println("Not Found");
+            return true;
+        }
+        /** Server Error */
+        else if (Objects.equals(numberAnswer, "38")) {
+            System.err.println("Internal Server Error");
+            return false;
+        }
+        answer.remove(0);
 
+        /** Success */
+        for (String result: answer)
+            System.out.println(result);
         return true;
     }
 }
