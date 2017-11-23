@@ -3,17 +3,19 @@ import java.net.*;
 import java.util.*;
 
 public class Client {
-    private static int port = 49001;
+    private static int port = 49002;
     private static ArrayList<String> answer;
 
     public static void main(String[] args){
         try {
-            Socket socket = new Socket(InetAddress.getLocalHost(), port);
+            Scanner sc = new Scanner(System.in);
+            System.out.print("Input IP address: ");
+            Socket socket = new Socket(sc.nextLine(), port);
+
+            ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
+            ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
 
             while (true) {
-                ObjectInputStream is = new ObjectInputStream(socket.getInputStream());
-                ObjectOutputStream os = new ObjectOutputStream(socket.getOutputStream());
-                Scanner sc = new Scanner(System.in);
                 String command = sc.nextLine();
                 os.writeObject(command);
                 answer = (ArrayList<String>) is.readObject();
